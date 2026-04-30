@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RGB DUEL — IoT Color Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --r: #ff3c3c;
+    --g: #39ff6e;
+    --b: #3c8eff;
+    --bg: #080b0f;
+    --surface: #0e1218;
+    --surface2: #151b24;
+    --border: #1e2a38;
+    --text: #c8d8e8;
+    --muted: #4a6070;
+    --mono: 'Share Tech Mono', monospace;
+    --display: 'Bebas Neue', cursive;
+    --body: 'DM Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(60,142,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(60,142,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 48px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .logo {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .logo-title {
+    font-family: var(--display);
+    font-size: 56px;
+    line-height: 1;
+    letter-spacing: 2px;
+    background: linear-gradient(90deg, var(--r), var(--g), var(--b));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .logo-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .status-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--g);
+  }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--g);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(57,255,110,0.4); }
+    50% { opacity: 0.6; box-shadow: 0 0 0 6px rgba(57,255,110,0); }
+  }
+
+  .last-update {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* Mode badges */
+  .mode-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 4px;
+    border: 1px solid;
+  }
+
+  .badge-mode {
+    border-color: var(--b);
+    color: var(--b);
+    background: rgba(60,142,255,0.08);
+  }
+
+  .badge-type {
+    border-color: var(--g);
+    color: var(--g);
+    background: rgba(57,255,110,0.08);
+  }
+
+  .badge-status {
+    border-color: var(--muted);
+    color: var(--muted);
+    background: transparent;
+  }
+
+  .badge-status.active {
+    border-color: var(--r);
+    color: var(--r);
+    background: rgba(255,60,60,0.08);
+  }
+
+  /* Target color display */
+  .target-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .target-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .color-preview {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    transition: background 0.5s ease;
+    box-shadow: 0 0 30px rgba(255,255,255,0.1);
+  }
+
+  .rgb-values {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .rgb-channel {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .rgb-channel-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+  }
+
+  .rgb-channel-label.r { color: var(--r); }
+  .rgb-channel-label.g { color: var(--g); }
+  .rgb-channel-label.b { color: var(--b); }
+
+  .rgb-channel-value {
+    font-family: var(--display);
+    font-size: 48px;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .rgb-bar-track {
+    width: 120px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .rgb-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  .rgb-bar-fill.r { background: var(--r); }
+  .rgb-bar-fill.g { background: var(--g); }
+  .rgb-bar-fill.b { background: var(--b); }
+
+  /* Players section */
+  .players-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 20px;
+    align-items: start;
+    margin-bottom: 32px;
+  }
+
+  @media (max-width: 600px) {
+    .players-grid {
+      grid-template-columns: 1fr;
+    }
+    .vs-divider { display: none; }
+  }
+
+  .player-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    transition: border-color 0.3s;
+  }
+
+  .player-card.winning {
+    border-color: var(--g);
+    box-shadow: 0 0 20px rgba(57,255,110,0.08);
+  }
+
+  .player-card.ready {
+    border-color: var(--b);
+  }
+
+  .player-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .player-name {
+    font-family: var(--display);
+    font-size: 28px;
+    letter-spacing: 1px;
+    color: var(--text);
+  }
+
+  .player-ready {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    border-radius: 3px;
+    text-transform: uppercase;
+  }
+
+  .player-ready.yes {
+    color: var(--g);
+    background: rgba(57,255,110,0.1);
+    border: 1px solid rgba(57,255,110,0.3);
+  }
+
+  .player-ready.no {
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--border);
+  }
+
+  .score-display {
+    font-family: var(--display);
+    font-size: 88px;
+    line-height: 1;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .score-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .score-bar-track {
+    margin-top: 16px;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .score-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--b), var(--g));
+    border-radius: 2px;
+    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* VS divider */
+  .vs-divider {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 40px;
+    gap: 12px;
+  }
+
+  .vs-text {
+    font-family: var(--display);
+    font-size: 32px;
+    color: var(--muted);
+  }
+
+  .vs-line {
+    width: 1px;
+    height: 40px;
+    background: var(--border);
+  }
+
+  /* Solo mode */
+  .solo-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 32px;
+    display: none;
+  }
+
+  /* Game log */
+  .log-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 32px;
+  }
+
+  .log-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .log-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .log-clear {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
+
+  .log-clear:hover { color: var(--r); }
+
+  .log-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+
+  .log-entry {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    gap: 12px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .log-time { color: var(--b); flex-shrink: 0; }
+  .log-entry.win .log-msg { color: var(--g); }
+  .log-entry.score .log-msg { color: var(--text); }
+  .log-entry.error .log-msg { color: var(--r); }
+
+  /* Winner overlay */
+  .winner-banner {
+    display: none;
+    background: var(--surface2);
+    border: 1px solid var(--g);
+    border-radius: 12px;
+    padding: 32px;
+    text-align: center;
+    margin-bottom: 32px;
+    box-shadow: 0 0 40px rgba(57,255,110,0.1);
+    animation: fadeIn 0.5s ease;
+  }
+
+  .winner-banner.show { display: block; }
+
+  .winner-title {
+    font-family: var(--display);
+    font-size: 16px;
+    letter-spacing: 6px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .winner-name {
+    font-family: var(--display);
+    font-size: 64px;
+    background: linear-gradient(90deg, var(--g), var(--b));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Config panel */
+  .config-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+  }
+
+  .config-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+
+  .config-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .config-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .config-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  .config-input:focus { border-color: var(--b); }
+
+  .config-select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .config-btn {
+    margin-top: 20px;
+    background: var(--b);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 24px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .config-btn:hover { opacity: 0.8; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--border); }
+  ::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-title">RGB DUEL</div>
+      <div class="logo-sub">IoT Color Matching Game</div>
+    </div>
+    <div class="status-bar">
+      <div class="live-indicator">
+        <div class="live-dot"></div>
+        <span id="conn-status">CONNECTING...</span>
+      </div>
+      <div class="last-update" id="last-update">—</div>
+    </div>
+  </header>
+
+  <!-- Mode badges -->
+  <div class="mode-row">
+    <span class="badge badge-mode" id="badge-mode">1V1</span>
+    <span class="badge badge-type" id="badge-type">COLOR MODE</span>
+    <span class="badge badge-status" id="badge-game">WAITING</span>
+  </div>
+
+  <!-- Winner banner -->
+  <div class="winner-banner" id="winner-banner">
+    <div class="winner-title">Winner</div>
+    <div class="winner-name" id="winner-name">—</div>
+  </div>
+
+  <!-- Target color display -->
+  <div class="target-section">
+    <div>
+      <div class="target-label">Target Color</div>
+      <div class="color-preview" id="color-preview"></div>
+    </div>
+    <div class="rgb-values">
+      <div class="rgb-channel">
+        <div class="rgb-channel-label r">R</div>
+        <div class="rgb-channel-value" id="val-r">—</div>
+        <div class="rgb-bar-track"><div class="rgb-bar-fill r" id="bar-r" style="width:0%"></div></div>
+      </div>
+      <div class="rgb-channel">
+        <div class="rgb-channel-label g">G</div>
+        <div class="rgb-channel-value" id="val-g">—</div>
+        <div class="rgb-bar-track"><div class="rgb-bar-fill g" id="bar-g" style="width:0%"></div></div>
+      </div>
+      <div class="rgb-channel">
+        <div class="rgb-channel-label b">B</div>
+        <div class="rgb-channel-value" id="val-b">—</div>
+        <div class="rgb-bar-track"><div class="rgb-bar-fill b" id="bar-b" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Players (1v1) -->
+  <div class="players-grid" id="pvp-section">
+    <div class="player-card" id="card-p1">
+      <div class="player-header">
+        <div class="player-name">PLAYER 1</div>
+        <div class="player-ready no" id="ready-p1">WAITING</div>
+      </div>
+      <div class="score-display" id="score-p1">0</div>
+      <div class="score-label">Points</div>
+      <div class="score-bar-track">
+        <div class="score-bar-fill" id="bar-p1" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="vs-divider">
+      <div class="vs-line"></div>
+      <div class="vs-text">VS</div>
+      <div class="vs-line"></div>
+    </div>
+
+    <div class="player-card" id="card-p2">
+      <div class="player-header">
+        <div class="player-name">PLAYER 2</div>
+        <div class="player-ready no" id="ready-p2">WAITING</div>
+      </div>
+      <div class="score-display" id="score-p2">0</div>
+      <div class="score-label">Points</div>
+      <div class="score-bar-track">
+        <div class="score-bar-fill" id="bar-p2" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game log -->
+  <div class="log-section">
+    <div class="log-header">
+      <div class="log-title">Game Log</div>
+      <button class="log-clear" onclick="clearLog()">CLEAR</button>
+    </div>
+    <div class="log-list" id="log-list">
+      <div class="log-entry">
+        <span class="log-time">--:--:--</span>
+        <span class="log-msg">Waiting for connection...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Config -->
+  <div class="config-panel">
+    <div class="config-title">Configuration</div>
+    <div class="config-grid">
+      <div class="config-field">
+        <div class="config-label">SUPABASE URL</div>
+        <input class="config-input" id="cfg-url" type="text" placeholder="https://xxx.supabase.co" value="https://qdhcbcmtmawyxwubetpr.supabase.co">
+      </div>
+      <div class="config-field">
+        <div class="config-label">ANON KEY</div>
+        <input class="config-input" id="cfg-key" type="password" placeholder="eyJ...">
+      </div>
+      <div class="config-field">
+        <div class="config-label">GAME MODE</div>
+        <select class="config-select" id="cfg-mode" onchange="updateMode()">
+          <option value="1v1">1 vs 1</option>
+          <option value="solo">Solo</option>
+        </select>
+      </div>
+      <div class="config-field">
+        <div class="config-label">COLOR TYPE</div>
+        <select class="config-select" id="cfg-type" onchange="updateType()">
+          <option value="color">Color Match</option>
+          <option value="number">Number Match</option>
+        </select>
+      </div>
+      <div class="config-field">
+        <div class="config-label">WIN SCORE</div>
+        <input class="config-input" id="cfg-winscore" type="number" value="5" min="1" max="20">
+      </div>
+      <div class="config-field">
+        <div class="config-label">REFRESH (ms)</div>
+        <input class="config-input" id="cfg-interval" type="number" value="3000" min="1000">
+      </div>
+    </div>
+    <button class="config-btn" onclick="applyConfig()">APPLY & CONNECT</button>
+  </div>
+
+</div>
+
+<script>
+  let SUPABASE_URL = 'https://qdhcbcmtmawyxwubetpr.supabase.co';
+  let ANON_KEY = '';
+  let WIN_SCORE = 5;
+  let REFRESH_MS = 3000;
+  let gameMode = '1v1';
+  let colorType = 'color';
+  let pollInterval = null;
+  let prevScores = { player1: -1, player2: -1 };
+
+  function applyConfig() {
+    SUPABASE_URL = document.getElementById('cfg-url').value.trim();
+    ANON_KEY = document.getElementById('cfg-key').value.trim();
+    WIN_SCORE = parseInt(document.getElementById('cfg-winscore').value) || 5;
+    REFRESH_MS = parseInt(document.getElementById('cfg-interval').value) || 3000;
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(fetchData, REFRESH_MS);
+    fetchData();
+    addLog('Config applied — polling every ' + REFRESH_MS + 'ms', 'info');
+  }
+
+  function updateMode() {
+    gameMode = document.getElementById('cfg-mode').value;
+    document.getElementById('badge-mode').textContent = gameMode === '1v1' ? '1V1' : 'SOLO';
+  }
+
+  function updateType() {
+    colorType = document.getElementById('cfg-type').value;
+    document.getElementById('badge-type').textContent = colorType === 'color' ? 'COLOR MODE' : 'NUMBER MODE';
+  }
+
+  async function fetchData() {
+    if (!ANON_KEY) return;
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/scores?select=*', {
+        headers: {
+          'apikey': ANON_KEY,
+          'Authorization': 'Bearer ' + ANON_KEY
+        }
+      });
+
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+
+      document.getElementById('conn-status').textContent = 'LIVE';
+      document.getElementById('last-update').textContent =
+        'Updated ' + new Date().toLocaleTimeString();
+
+      updateScoreboard(data);
+    } catch (e) {
+      document.getElementById('conn-status').textContent = 'ERROR';
+      addLog('Connection error: ' + e.message, 'error');
+    }
+  }
+
+  function updateScoreboard(rows) {
+    const p1 = rows.find(r => r.device_id === 'player1') || {};
+    const p2 = rows.find(r => r.device_id === 'player2') || {};
+
+    const s1 = p1.score ?? 0;
+    const s2 = p2.score ?? 0;
+
+    // Update scores
+    document.getElementById('score-p1').textContent = s1;
+    document.getElementById('score-p2').textContent = s2;
+    document.getElementById('bar-p1').style.width = Math.min(100, (s1 / WIN_SCORE) * 100) + '%';
+    document.getElementById('bar-p2').style.width = Math.min(100, (s2 / WIN_SCORE) * 100) + '%';
+
+    // Winning highlight
+    document.getElementById('card-p1').classList.toggle('winning', s1 > s2 && s1 > 0);
+    document.getElementById('card-p2').classList.toggle('winning', s2 > s1 && s2 > 0);
+
+    // Ready states
+    setReady('p1', p1.ready);
+    setReady('p2', p2.ready);
+
+    // Game active badge
+    const gameActive = p1.game_active || p2.game_active;
+    const badge = document.getElementById('badge-game');
+    badge.textContent = gameActive ? 'IN PROGRESS' : (p1.ready && p2.ready ? 'READY' : 'WAITING');
+    badge.classList.toggle('active', gameActive);
+
+    // Target color from first player (shared)
+    const tc = p1.target_color;
+    if (tc) updateColor(tc);
+
+    // Winner
+    const winner = p1.winner || p2.winner;
+    if (winner) showWinner(winner);
+
+    // Log score changes
+    if (prevScores.player1 !== -1 && s1 !== prevScores.player1)
+      addLog('Player 1 score → ' + s1, 'score');
+    if (prevScores.player2 !== -1 && s2 !== prevScores.player2)
+      addLog('Player 2 score → ' + s2, 'score');
+
+    prevScores = { player1: s1, player2: s2 };
+  }
+
+  function setReady(id, val) {
+    const el = document.getElementById('ready-' + id);
+    el.textContent = val ? 'READY' : 'WAITING';
+    el.className = 'player-ready ' + (val ? 'yes' : 'no');
+  }
+
+  function updateColor(tc) {
+    let r = 128, g = 128, b = 128;
+    if (typeof tc === 'string' && tc.includes(',')) {
+      const parts = tc.split(',').map(Number);
+      r = parts[0] ?? 128; g = parts[1] ?? 128; b = parts[2] ?? 128;
+    } else if (typeof tc === 'object') {
+      r = tc.r ?? 128; g = tc.g ?? 128; b = tc.b ?? 128;
+    }
+    document.getElementById('color-preview').style.background = `rgb(${r},${g},${b})`;
+    document.getElementById('val-r').textContent = r;
+    document.getElementById('val-g').textContent = g;
+    document.getElementById('val-b').textContent = b;
+    document.getElementById('bar-r').style.width = (r / 255 * 100) + '%';
+    document.getElementById('bar-g').style.width = (g / 255 * 100) + '%';
+    document.getElementById('bar-b').style.width = (b / 255 * 100) + '%';
+  }
+
+  function showWinner(name) {
+    document.getElementById('winner-banner').classList.add('show');
+    document.getElementById('winner-name').textContent = name.toUpperCase();
+    addLog('🏆 Winner: ' + name, 'win');
+  }
+
+  function addLog(msg, type = 'info') {
+    const list = document.getElementById('log-list');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry ' + type;
+    const t = new Date().toLocaleTimeString();
+    entry.innerHTML = `<span class="log-time">${t}</span><span class="log-msg">${msg}</span>`;
+    list.prepend(entry);
+    while (list.children.length > 30) list.removeChild(list.lastChild);
+  }
+
+  function clearLog() {
+    document.getElementById('log-list').innerHTML = '';
+  }
+
+  // Demo colors cycling when no key set
+  const demoColors = [
+    [255, 60, 120], [60, 140, 255], [120, 255, 80],
+    [255, 200, 40], [180, 60, 255], [255, 120, 40]
+  ];
+  let demoIdx = 0;
+  setInterval(() => {
+    if (!ANON_KEY) {
+      const c = demoColors[demoIdx++ % demoColors.length];
+      updateColor({ r: c[0], g: c[1], b: c[2] });
+    }
+  }, 2500);
+
+  // Init demo
+  updateColor({ r: 255, g: 60, b: 120 });
+</script>
+</body>
+</html>
