@@ -3,309 +3,826 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RGB Gæt — Farvehistorik</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono&display=swap" rel="stylesheet">
+<title>RGB DUEL — Live Scoreboard</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Bebas+Neue&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --bg: #f2efe8;
-    --ink: #1a1a18;
-    --muted: #9a9890;
-    --border: #d8d4cc;
-    --card: #ffffff;
+    --r: #ff3344;
+    --g: #22dd77;
+    --b: #3388ff;
+    --bg: #0a0d12;
+    --surface: #11151c;
+    --surface2: #1a1f2a;
+    --border: #232a38;
+    --text: #d8e0ec;
+    --muted: #5a6878;
+    --mono: 'JetBrains Mono', monospace;
+    --display: 'Bebas Neue', sans-serif;
+    --body: 'Inter', sans-serif;
   }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
     background: var(--bg);
-    color: var(--ink);
-    font-family: 'Syne', sans-serif;
+    color: var(--text);
+    font-family: var(--body);
     min-height: 100vh;
+    overflow-x: hidden;
   }
 
-  /* Grain overlay */
-  body::after {
+  body::before {
     content: '';
     position: fixed;
     inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    background-image:
+      linear-gradient(rgba(60,142,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(60,142,255,0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
     pointer-events: none;
-    z-index: 100;
-    opacity: 0.5;
+    z-index: 0;
   }
 
-  .page {
-    max-width: 720px;
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
     margin: 0 auto;
-    padding: 56px 24px 80px;
+    padding: 32px 20px;
   }
 
-  /* Header */
   header {
-    margin-bottom: 56px;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 32px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 24px;
-    flex-wrap: wrap;
-  }
-
-  h1 {
-    font-size: clamp(36px, 7vw, 60px);
-    font-weight: 800;
-    line-height: 1;
-    letter-spacing: -0.03em;
-  }
-
-  .header-meta {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-    text-align: right;
-  }
-
-  .header-meta span {
-    display: block;
-    margin-top: 4px;
-  }
-
-  /* Legend */
-  .legend {
-    display: flex;
-    gap: 24px;
-    margin-bottom: 32px;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-  }
-
-  .legend-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: space-between;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+    gap: 16px;
   }
 
-  .legend-swatch {
-    width: 14px;
-    height: 14px;
-    border-radius: 2px;
-  }
-
-  .legend-swatch.target {
-    background: var(--ink);
-  }
-
-  .legend-swatch.guess {
-    background: var(--ink);
-    opacity: 0.3;
-    outline: 1px dashed var(--muted);
-    outline-offset: 2px;
-  }
-
-  /* Grid */
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 12px;
-  }
-
-  /* Card */
-  .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    padding: 12px;
-    opacity: 0;
-    transform: translateY(10px);
-    animation: up 0.35s forwards;
-  }
-
-  @keyframes up {
-    to { opacity: 1; transform: none; }
-  }
-
-  .swatches {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 10px;
-  }
-
-  .swatch {
-    flex: 1;
-    height: 64px;
-    border-radius: 2px;
-  }
-
-  .swatch.target {
-    /* color set inline */
-  }
-
-  .swatch.guess {
-    /* color set inline */
-    position: relative;
-  }
-
-  /* Deviation badge */
-  .dev {
-    font-family: 'DM Mono', monospace;
-    font-size: 18px;
-    font-weight: 400;
+  .logo-title {
+    font-family: var(--display);
+    font-size: 52px;
     line-height: 1;
-    color: var(--ink);
+    letter-spacing: 3px;
+    background: linear-gradient(90deg, var(--r), var(--g), var(--b));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
-  .dev-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
+  .logo-sub {
+    font-family: var(--mono);
+    font-size: 10px;
     color: var(--muted);
-    letter-spacing: 0.12em;
+    letter-spacing: 4px;
     text-transform: uppercase;
     margin-top: 2px;
   }
 
-  /* Deviation color — green når tæt, rød når langt */
-  .dev.close { color: #2a7a4a; }
-  .dev.mid   { color: #a06020; }
-  .dev.far   { color: #b03030; }
-
-  /* Timestamp */
-  .ts {
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    color: var(--muted);
-    margin-top: 6px;
-    letter-spacing: 0.05em;
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--g);
+    letter-spacing: 2px;
   }
 
-  /* Empty state */
-  .empty {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 64px 0;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--muted);
-    letter-spacing: 0.1em;
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--g);
+    animation: pulse 1.5s ease-in-out infinite;
   }
 
-  /* Loading */
-  .loading {
-    text-align: center;
-    padding: 64px 0;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--muted);
-    letter-spacing: 0.1em;
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34,221,119,0.4); }
+    50% { opacity: 0.5; box-shadow: 0 0 0 8px rgba(34,221,119,0); }
   }
 
-  .dot {
+  .game-state {
     display: inline-block;
-    animation: blink 1s ease-in-out infinite;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    border: 1px solid;
+    margin-bottom: 28px;
   }
-  .dot:nth-child(2) { animation-delay: 0.2s; }
-  .dot:nth-child(3) { animation-delay: 0.4s; }
 
-  @keyframes blink {
-    0%, 100% { opacity: 0.2; }
-    50%       { opacity: 1; }
+  .state-waiting { color: var(--muted); border-color: var(--muted); }
+  .state-ready   { color: var(--b); border-color: var(--b); background: rgba(51,136,255,0.08); }
+  .state-active  { color: var(--g); border-color: var(--g); background: rgba(34,221,119,0.08); }
+  .state-ended   { color: var(--r); border-color: var(--r); background: rgba(255,51,68,0.08); }
+
+  .winner-banner {
+    display: none;
+    background: linear-gradient(135deg, rgba(34,221,119,0.12), rgba(51,136,255,0.12));
+    border: 1px solid var(--g);
+    border-radius: 14px;
+    padding: 28px;
+    text-align: center;
+    margin-bottom: 28px;
+    animation: bannerIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
+
+  .winner-banner.show { display: block; }
+
+  @keyframes bannerIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .winner-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 6px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .winner-name {
+    font-family: var(--display);
+    font-size: 56px;
+    background: linear-gradient(90deg, var(--g), var(--b));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 2px;
+  }
+
+  .target-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 32px;
+    align-items: center;
+  }
+
+  @media (max-width: 600px) {
+    .target-section { grid-template-columns: 1fr; }
+  }
+
+  .target-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .color-orb {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    transition: background 0.6s ease, box-shadow 0.6s ease;
+    background: rgb(60, 60, 60);
+  }
+
+  .color-hex {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--text);
+    letter-spacing: 2px;
+  }
+
+  .target-right {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .rgb-row {
+    display: grid;
+    grid-template-columns: 24px 1fr 50px;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .rgb-letter {
+    font-family: var(--display);
+    font-size: 22px;
+  }
+
+  .rgb-letter.r { color: var(--r); }
+  .rgb-letter.g { color: var(--g); }
+  .rgb-letter.b { color: var(--b); }
+
+  .rgb-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .rgb-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .rgb-bar-fill.r { background: var(--r); }
+  .rgb-bar-fill.g { background: var(--g); }
+  .rgb-bar-fill.b { background: var(--b); }
+
+  .rgb-num {
+    font-family: var(--mono);
+    font-size: 14px;
+    text-align: right;
+    color: var(--text);
+  }
+
+  .players-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 18px;
+    align-items: stretch;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 700px) {
+    .players-grid { grid-template-columns: 1fr; }
+    .vs-divider { display: none; }
+  }
+
+  .player-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    transition: border-color 0.4s, box-shadow 0.4s;
+  }
+
+  .player-card.leading {
+    border-color: var(--g);
+    box-shadow: 0 0 24px rgba(34,221,119,0.08);
+  }
+
+  .player-card.winner {
+    border-color: var(--g);
+    box-shadow: 0 0 32px rgba(34,221,119,0.2);
+  }
+
+  .player-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+
+  .player-name {
+    font-family: var(--display);
+    font-size: 26px;
+    letter-spacing: 1.5px;
+  }
+
+  .player-tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+
+  .player-tag.ready { color: var(--b); border-color: var(--b); background: rgba(51,136,255,0.08); }
+  .player-tag.waiting { color: var(--muted); border-color: var(--border); }
+
+  .player-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .stat-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .stat-value {
+    font-family: var(--display);
+    font-size: 44px;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .player-guess-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .guess-orb {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: rgb(40, 40, 40);
+  }
+
+  .guess-text {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .vs-divider {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 8px;
+  }
+
+  .vs-line {
+    width: 1px;
+    height: 36px;
+    background: var(--border);
+  }
+
+  .vs-text {
+    font-family: var(--display);
+    font-size: 28px;
+    color: var(--muted);
+    letter-spacing: 2px;
+  }
+
+  .log-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 26px;
+    margin-bottom: 24px;
+  }
+
+  .log-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .log-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 180px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .log-entry {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    gap: 12px;
+    padding: 4px 0;
+    animation: fadeIn 0.4s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .log-time { color: var(--b); flex-shrink: 0; }
+  .log-entry.win .log-msg { color: var(--g); }
+  .log-entry.score .log-msg { color: var(--text); }
+  .log-entry.error .log-msg { color: var(--r); }
+
+  .config-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 26px;
+  }
+
+  .config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-top: 12px;
+  }
+
+  .config-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .config-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  .config-input:focus { border-color: var(--b); }
+
+  .config-btn {
+    margin-top: 18px;
+    background: var(--b);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 11px 24px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+
+  .config-btn:hover { opacity: 0.85; }
+  .config-btn:active { transform: translateY(1px); }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 </style>
 </head>
 <body>
-<div class="page">
+<div class="container">
 
   <header>
-    <h1>Farve<br>historik</h1>
-    <div class="header-meta">
-      RGB Gæt-spil
-      <span id="round-count">— runder</span>
+    <div>
+      <div class="logo-title">RGB DUEL</div>
+      <div class="logo-sub">Live Color Match Scoreboard</div>
+    </div>
+    <div class="live-indicator">
+      <div class="live-dot"></div>
+      <span id="conn-status">CONNECTING</span>
     </div>
   </header>
 
-  <div class="legend">
-    <div class="legend-item">
-      <div class="legend-swatch target"></div>
-      <span>Target</span>
+  <span class="game-state state-waiting" id="game-state">VENTER PÅ SPILLERE</span>
+
+  <div class="winner-banner" id="winner-banner">
+    <div class="winner-title">Vinder af runden</div>
+    <div class="winner-name" id="winner-name">—</div>
+  </div>
+
+  <div class="target-section">
+    <div class="target-left">
+      <div class="section-label">Målfarve</div>
+      <div class="color-orb" id="target-orb"></div>
+      <div class="color-hex" id="target-hex">#000000</div>
     </div>
-    <div class="legend-item">
-      <div class="legend-swatch guess"></div>
-      <span>Gæt</span>
+    <div class="target-right">
+      <div class="rgb-row">
+        <div class="rgb-letter r">R</div>
+        <div class="rgb-bar"><div class="rgb-bar-fill r" id="target-bar-r" style="width:0%"></div></div>
+        <div class="rgb-num" id="target-num-r">0</div>
+      </div>
+      <div class="rgb-row">
+        <div class="rgb-letter g">G</div>
+        <div class="rgb-bar"><div class="rgb-bar-fill g" id="target-bar-g" style="width:0%"></div></div>
+        <div class="rgb-num" id="target-num-g">0</div>
+      </div>
+      <div class="rgb-row">
+        <div class="rgb-letter b">B</div>
+        <div class="rgb-bar"><div class="rgb-bar-fill b" id="target-bar-b" style="width:0%"></div></div>
+        <div class="rgb-num" id="target-num-b">0</div>
+      </div>
     </div>
   </div>
 
-  <div class="grid" id="grid">
-    <div class="loading">
-      Henter<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>
+  <div class="players-grid">
+    <div class="player-card" id="card-p1">
+      <div class="player-header">
+        <div class="player-name">PLAYER 1</div>
+        <div class="player-tag waiting" id="tag-p1">VENTER</div>
+      </div>
+      <div class="player-body">
+        <div class="stat-block">
+          <div class="stat-label">Total Score</div>
+          <div class="stat-value" id="score-p1">0</div>
+        </div>
+        <div class="stat-block">
+          <div class="stat-label">Status</div>
+          <div class="stat-value" id="status-p1" style="font-size:24px;color:var(--muted)">—</div>
+        </div>
+      </div>
+      <div class="player-guess-row">
+        <div class="section-label">Sidste gæt:</div>
+        <div class="guess-orb" id="guess-orb-p1"></div>
+        <div class="guess-text" id="guess-text-p1">ingen</div>
+      </div>
     </div>
+
+    <div class="vs-divider">
+      <div class="vs-line"></div>
+      <div class="vs-text">VS</div>
+      <div class="vs-line"></div>
+    </div>
+
+    <div class="player-card" id="card-p2">
+      <div class="player-header">
+        <div class="player-name">PLAYER 2</div>
+        <div class="player-tag waiting" id="tag-p2">VENTER</div>
+      </div>
+      <div class="player-body">
+        <div class="stat-block">
+          <div class="stat-label">Total Score</div>
+          <div class="stat-value" id="score-p2">0</div>
+        </div>
+        <div class="stat-block">
+          <div class="stat-label">Status</div>
+          <div class="stat-value" id="status-p2" style="font-size:24px;color:var(--muted)">—</div>
+        </div>
+      </div>
+      <div class="player-guess-row">
+        <div class="section-label">Sidste gæt:</div>
+        <div class="guess-orb" id="guess-orb-p2"></div>
+        <div class="guess-text" id="guess-text-p2">ingen</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="log-section">
+    <div class="log-header">
+      <span class="section-label">Aktivitet</span>
+      <span class="section-label" id="last-update">—</span>
+    </div>
+    <div class="log-list" id="log-list">
+      <div class="log-entry">
+        <span class="log-time">--:--:--</span>
+        <span class="log-msg">Venter på forbindelse...</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="config-panel">
+    <span class="section-label">Forbindelse</span>
+    <div class="config-grid">
+      <div class="config-field">
+        <span class="section-label">Supabase URL</span>
+        <input class="config-input" id="cfg-url" type="text" placeholder="https://xxx.supabase.co">
+      </div>
+      <div class="config-field">
+        <span class="section-label">Anon Key</span>
+        <input class="config-input" id="cfg-key" type="password" placeholder="eyJ...">
+      </div>
+      <div class="config-field">
+        <span class="section-label">Refresh interval (sek)</span>
+        <input class="config-input" id="cfg-interval" type="number" value="2" min="1" max="60">
+      </div>
+    </div>
+    <button class="config-btn" onclick="applyConfig()">FORBIND</button>
   </div>
 
 </div>
 
 <script>
-  const SUPABASE_URL = 'https://qdhcbcmtmawyxwubetpe.supabase.co';
-  const ANON_KEY     = 'din_anon_key_her';
+  let SUPABASE_URL = '';
+  let ANON_KEY = '';
+  let REFRESH_MS = 2000;
+  let pollInterval = null;
+  let prevState = {
+    p1: { score: -1, ready: null, guess: null },
+    p2: { score: -1, ready: null, guess: null },
+    target: null,
+    winner: null
+  };
 
-  function hexInt(n) {
-    if (n == null) return null;
-    const r = (n >> 16) & 0xFF;
-    const g = (n >> 8)  & 0xFF;
-    const b =  n        & 0xFF;
-    return `rgb(${r},${g},${b})`;
-  }
+  function applyConfig() {
+    SUPABASE_URL = document.getElementById('cfg-url').value.trim();
+    ANON_KEY     = document.getElementById('cfg-key').value.trim();
+    REFRESH_MS   = (parseInt(document.getElementById('cfg-interval').value) || 2) * 1000;
 
-  function devClass(d) {
-    if (d <= 30)  return 'close';
-    if (d <= 100) return 'mid';
-    return 'far';
-  }
-
-  function formatTime(iso) {
-    const d = new Date(iso);
-    return d.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })
-      + ' ' + d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
-  }
-
-  async function load() {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/rounds?select=target_color,guess_color,deviation,created_at&order=created_at.desc&limit=60`,
-      { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } }
-    );
-    const rows = await res.json();
-    const grid = document.getElementById('grid');
-
-    document.getElementById('round-count').textContent =
-      rows.length + ' runde' + (rows.length === 1 ? '' : 'r');
-
-    if (!rows.length) {
-      grid.innerHTML = '<div class="empty">Ingen runder endnu</div>';
+    if (!ANON_KEY || !SUPABASE_URL) {
+      addLog('Mangler URL eller nøgle', 'error');
       return;
     }
 
-    grid.innerHTML = rows.map((r, i) => {
-      const tc = hexInt(r.target_color);
-      const gc = hexInt(r.guess_color);
-      const d  = r.deviation ?? '?';
-      const dc = typeof d === 'number' ? devClass(d) : '';
-      return `
-        <div class="card" style="animation-delay:${i * 30}ms">
-          <div class="swatches">
-            <div class="swatch target" style="background:${tc ?? '#ccc'}"></div>
-            <div class="swatch guess"  style="background:${gc ?? '#ccc'}"></div>
-          </div>
-          <div class="dev ${dc}">${d}</div>
-          <div class="dev-label">afvigelse</div>
-          <div class="ts">${formatTime(r.created_at)}</div>
-        </div>`;
-    }).join('');
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(fetchData, REFRESH_MS);
+    fetchData();
+    addLog('Forbinder til Supabase...', 'info');
   }
 
-  load().catch(() => {
-    document.getElementById('grid').innerHTML =
-      '<div class="empty">Kunne ikke hente data</div>';
-  });
+  async function fetchData() {
+    if (!ANON_KEY) return;
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/scores?select=*', {
+        headers: {
+          'apikey': ANON_KEY,
+          'Authorization': 'Bearer ' + ANON_KEY
+        }
+      });
+
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+
+      document.getElementById('conn-status').textContent = 'LIVE';
+      document.getElementById('last-update').textContent =
+        'Opdateret ' + new Date().toLocaleTimeString();
+
+      updateScoreboard(data);
+    } catch (e) {
+      document.getElementById('conn-status').textContent = 'FEJL';
+      addLog('Forbindelsesfejl: ' + e.message, 'error');
+    }
+  }
+
+  function parseColor(val) {
+    // Understøtter både string "r,g,b" og int (hexadecimal sammensat)
+    if (val == null) return null;
+    if (typeof val === 'number') {
+      // Antag 24-bit hex: 0xRRGGBB
+      const r = (val >> 16) & 0xFF;
+      const g = (val >> 8) & 0xFF;
+      const b = val & 0xFF;
+      return { r, g, b };
+    }
+    if (typeof val === 'string' && val.includes(',')) {
+      const parts = val.split(',').map(s => parseInt(s.trim()));
+      if (parts.length !== 3 || parts.some(isNaN)) return null;
+      return { r: parts[0], g: parts[1], b: parts[2] };
+    }
+    return null;
+  }
+
+  function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map(v => {
+      const h = Math.max(0, Math.min(255, v)).toString(16);
+      return h.length === 1 ? '0' + h : h;
+    }).join('').toUpperCase();
+  }
+
+  function updateScoreboard(rows) {
+    const p1 = rows.find(r => r.device_id === 'player1') || {};
+    const p2 = rows.find(r => r.device_id === 'player2') || {};
+
+    const s1 = p1.score ?? 0;
+    const s2 = p2.score ?? 0;
+    document.getElementById('score-p1').textContent = s1;
+    document.getElementById('score-p2').textContent = s2;
+
+    document.getElementById('card-p1').classList.toggle('leading', s1 > s2 && s1 > 0);
+    document.getElementById('card-p2').classList.toggle('leading', s2 > s1 && s2 > 0);
+
+    setTag('p1', p1.ready);
+    setTag('p2', p2.ready);
+
+    document.getElementById('status-p1').textContent = p1.game_active ? 'AKTIV' : 'INAKTIV';
+    document.getElementById('status-p2').textContent = p2.game_active ? 'AKTIV' : 'INAKTIV';
+    document.getElementById('status-p1').style.color = p1.game_active ? 'var(--g)' : 'var(--muted)';
+    document.getElementById('status-p2').style.color = p2.game_active ? 'var(--g)' : 'var(--muted)';
+
+    const tc = parseColor(p1.target_color) || parseColor(p2.target_color);
+    if (tc) updateTargetColor(tc);
+
+    updateGuess('p1', parseColor(p1.color_guess));
+    updateGuess('p2', parseColor(p2.color_guess));
+
+    const winner = p1.winner || p2.winner;
+    if (winner && winner !== prevState.winner) {
+      showWinner(winner);
+    } else if (!winner) {
+      document.getElementById('winner-banner').classList.remove('show');
+      document.getElementById('card-p1').classList.remove('winner');
+      document.getElementById('card-p2').classList.remove('winner');
+    }
+
+    updateGameState(p1, p2, winner);
+
+    if (prevState.p1.score !== -1 && s1 !== prevState.p1.score)
+      addLog('Player 1 score → ' + s1, 'score');
+    if (prevState.p2.score !== -1 && s2 !== prevState.p2.score)
+      addLog('Player 2 score → ' + s2, 'score');
+    if (p1.ready && !prevState.p1.ready) addLog('Player 1 er klar', 'info');
+    if (p2.ready && !prevState.p2.ready) addLog('Player 2 er klar', 'info');
+
+    prevState = {
+      p1: { score: s1, ready: p1.ready, guess: p1.color_guess },
+      p2: { score: s2, ready: p2.ready, guess: p2.color_guess },
+      target: p1.target_color,
+      winner: winner
+    };
+  }
+
+  function setTag(id, val) {
+    const el = document.getElementById('tag-' + id);
+    el.textContent = val ? 'KLAR' : 'VENTER';
+    el.className = 'player-tag ' + (val ? 'ready' : 'waiting');
+  }
+
+  function updateTargetColor(c) {
+    document.getElementById('target-orb').style.background = `rgb(${c.r},${c.g},${c.b})`;
+    document.getElementById('target-orb').style.boxShadow = `0 0 30px rgba(${c.r},${c.g},${c.b},0.4)`;
+    document.getElementById('target-hex').textContent = rgbToHex(c.r, c.g, c.b);
+    document.getElementById('target-num-r').textContent = c.r;
+    document.getElementById('target-num-g').textContent = c.g;
+    document.getElementById('target-num-b').textContent = c.b;
+    document.getElementById('target-bar-r').style.width = (c.r / 255 * 100) + '%';
+    document.getElementById('target-bar-g').style.width = (c.g / 255 * 100) + '%';
+    document.getElementById('target-bar-b').style.width = (c.b / 255 * 100) + '%';
+  }
+
+  function updateGuess(id, c) {
+    const orb = document.getElementById('guess-orb-' + id);
+    const text = document.getElementById('guess-text-' + id);
+    if (c) {
+      orb.style.background = `rgb(${c.r},${c.g},${c.b})`;
+      text.textContent = rgbToHex(c.r, c.g, c.b);
+    } else {
+      orb.style.background = 'rgb(40,40,40)';
+      text.textContent = 'ingen';
+    }
+  }
+
+  function updateGameState(p1, p2, winner) {
+    const badge = document.getElementById('game-state');
+    if (winner) {
+      badge.textContent = 'SPIL AFSLUTTET';
+      badge.className = 'game-state state-ended';
+    } else if (p1.game_active || p2.game_active) {
+      badge.textContent = 'SPIL I GANG';
+      badge.className = 'game-state state-active';
+    } else if (p1.ready && p2.ready) {
+      badge.textContent = 'BEGGE KLAR';
+      badge.className = 'game-state state-ready';
+    } else {
+      badge.textContent = 'VENTER PÅ SPILLERE';
+      badge.className = 'game-state state-waiting';
+    }
+  }
+
+  function showWinner(name) {
+    document.getElementById('winner-banner').classList.add('show');
+    document.getElementById('winner-name').textContent = name.toUpperCase();
+    const cardId = name.toLowerCase().includes('1') ? 'card-p1' : 'card-p2';
+    document.getElementById(cardId).classList.add('winner');
+    addLog('Vinder: ' + name, 'win');
+  }
+
+  function addLog(msg, type) {
+    type = type || 'info';
+    const list = document.getElementById('log-list');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry ' + type;
+    const t = new Date().toLocaleTimeString();
+    entry.innerHTML = '<span class="log-time">' + t + '</span><span class="log-msg">' + msg + '</span>';
+    list.prepend(entry);
+    while (list.children.length > 40) list.removeChild(list.lastChild);
+  }
+
+  // Demo cycling før forbindelse
+  const demoColors = [
+    {r:255,g:60,b:120}, {r:60,g:140,b:255}, {r:120,g:255,b:80},
+    {r:255,g:200,b:40}, {r:180,g:60,b:255}, {r:255,g:120,b:40}
+  ];
+  let demoIdx = 0;
+  setInterval(function() {
+    if (!ANON_KEY) {
+      updateTargetColor(demoColors[demoIdx++ % demoColors.length]);
+    }
+  }, 2500);
+
+  updateTargetColor({r:255,g:60,b:120});
 </script>
 </body>
 </html>
